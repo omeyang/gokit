@@ -53,33 +53,53 @@ type MongoDBImpl struct {
 	singleConn bool                            // 是否单例方式链接
 }
 
-// GetMongoDBInstance 单例方式初始化mongo实例
-func GetMongoDBInstance(ctx context.Context, basic *options.ClientOptions,
-	opts ...func(*options.ClientOptions)) *MongoDBImpl {
+// GetMongoDBInstance 单例方式初始化 MongoDB 实例
+func GetMongoDBInstance(ctx context.Context, retryPolicy util.RetryPolicy, basic *options.ClientOptions,
+	opts ...func(*options.ClientOptions)) (*MongoDBImpl, error) {
+	var err error
 	mongoDBOnce.Do(func() {
-		mongoDBInstance = newMongoDBImpl(ctx, basic, opts...)
+		mongoDBInstance, err = newMongoDBImpl(ctx, retryPolicy, basic, opts...)
 	})
-	return mongoDBInstance
+	if err != nil {
+		return nil, err
+	}
+	return mongoDBInstance, nil
 }
 
 // newMongoDBImpl 使用基本配置和可选的配置函数来创建一个新的 MongoDB 客户端实例
-func newMongoDBImpl(ctx context.Context, basic *options.ClientOptions,
-	opts ...func(*options.ClientOptions)) *MongoDBImpl {
-	// 应用所有传入的配置选项到基本配置上 mongo-go-driver1.15以后发布的opts要注意顺序
+func newMongoDBImpl(ctx context.Context, retryPolicy util.RetryPolicy, basic *options.ClientOptions,
+	opts ...func(*options.ClientOptions)) (*MongoDBImpl, error) {
 	for _, opt := range opts {
-		opt(basic) // 直接应用配置函数修改 basic 对象
+		opt(basic)
 	}
-	mongoCli, err := mongo.Connect(ctx, basic)
-	if err != nil {
-		if mongoCli != nil {
-			mongoCli.Disconnect(ctx)
+
+	var mongoCli *mongo.Client
+	var err error
+
+	// 检查重试策略是否允许重试
+	if !retryPolicy.ShouldRetry(1, nil) {
+		// 如果不允许重试，直接尝试连接
+		mongoCli, err = mongo.Connect(ctx, basic)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
 		}
-		return nil
+	} else {
+		// 如果允许重试，进入重试循环
+		for attempt := 1; ; attempt++ {
+			mongoCli, err = mongo.Connect(ctx, basic)
+			if err == nil {
+				break
+			}
+			if !retryPolicy.ShouldRetry(attempt, err) {
+				return nil, fmt.Errorf("failed to connect to MongoDB after %d attempts: %v", attempt, err)
+			}
+			time.Sleep(time.Duration(retryPolicy.WaitDuration(attempt)) * time.Second)
+		}
 	}
-	// mongo-go-driver1.15 已经默认连接过了
+
 	return &MongoDBImpl{
 		client: mongoCli,
-	}
+	}, nil
 }
 
 // InitBatchPool 初始化对象池
@@ -96,19 +116,14 @@ func (m *MongoDBImpl) SetPoolSize(defaultPoolSize int) {
 	}
 }
 
+// GetBatchPool 返回批处理对象池
+func (m *MongoDBImpl) GetBatchPool() *pool.BatchPool[pool.BSONBatch] {
+	return m.batchPool
+}
+
 // GetClient 返回mongo的client
 func (m *MongoDBImpl) GetClient() *mongo.Client {
 	return m.client
-}
-
-// SetClient 设置 MongoDB 客户端
-func (m *MongoDBImpl) SetClient(client *mongo.Client) {
-	m.client = client
-}
-
-// GetCollection 返回mongo的集合表
-func (m *MongoDBImpl) GetCollection(dbName string, collName string) *mongo.Collection {
-	return m.client.Database(dbName).Collection(collName)
 }
 
 // Validate 验证PaginatedQueryParams的字段是否已被正确设置
@@ -124,21 +139,21 @@ func (m *MongoDBImpl) ReadByPage(ctx context.Context, params PaginatedQueryParam
 	if err := params.Validate(); err != nil {
 		return nil, err
 	}
+
 	coll := m.client.Database(params.DbName).Collection(params.CollName)
 	findOpts := options.Find().SetSkip(params.Page * params.PageSize).SetLimit(params.PageSize)
 	cursor, err := coll.Find(ctx, bson.M{}, findOpts)
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close(ctx)
 
-	batchPtr := m.batchPool.Get()                                              // 从Pool中获取切片指针
-	defer m.batchPool.Put(batchPtr, pool.NewBSONFactory(m.batchPool.PoolSize)) // 使用defer确保切片被正确回收
-	batch := *batchPtr
-	if err := cursor.All(ctx, &batch); err != nil {
+	var results []bson.M
+	if err := cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}
-	// 返回的是batch的副本，因此原始batch可以安全回收重用
-	return append([]bson.M(nil), batch...), nil
+
+	return results, nil
 }
 
 // BulkWriteWithRetry 带有重试策略的批量写
