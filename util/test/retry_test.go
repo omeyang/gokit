@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/util/retry"
 )
 
 // TestNoRetryPolicy 测试 NoRetryPolicy
 func TestNoRetryPolicy(t *testing.T) {
-	policy := &util.NoRetryPolicy{}
+	policy := &retry.NoRetryPolicy{}
 
 	if policy.ShouldRetry(1, errors.New("test error")) {
 		t.Errorf("NoRetryPolicy.ShouldRetry() = true, want false")
@@ -24,7 +24,7 @@ func TestNoRetryPolicy(t *testing.T) {
 // TestSimpleRetryPolicy 测试 SimpleRetryPolicy
 func TestSimpleRetryPolicy(t *testing.T) {
 	waitTime := 2 * time.Second
-	policy := &util.SimpleRetryPolicy{MaxAttempts: 3, WaitTime: waitTime}
+	policy := &retry.SimpleRetryPolicy{MaxAttempts: 3, WaitTime: waitTime}
 
 	tests := []struct {
 		attempt   int
@@ -48,7 +48,7 @@ func TestSimpleRetryPolicy(t *testing.T) {
 	}
 
 	// 测试最大尝试次数为0的情况
-	policy = &util.SimpleRetryPolicy{MaxAttempts: 0, WaitTime: waitTime}
+	policy = &retry.SimpleRetryPolicy{MaxAttempts: 0, WaitTime: waitTime}
 	if policy.ShouldRetry(0, errors.New("test error")) {
 		t.Errorf("SimpleRetryPolicy.ShouldRetry(0) = true, want false")
 	}
@@ -59,7 +59,7 @@ func TestSimpleRetryPolicy(t *testing.T) {
 }
 
 func TestExponentialBackoffRetryPolicy(t *testing.T) {
-	policy := &util.ExponentialBackoffRetryPolicy{
+	policy := &retry.ExponentialBackoffRetryPolicy{
 		BaseWaitTime: 2 * time.Second,
 		MaxAttempts:  3,
 	}

@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/omeyang/gokit/util/xfile"
+
 	"github.com/omeyang/gokit/util"
 )
 
@@ -34,7 +36,7 @@ func FuzzSafeFileOperation(f *testing.F) {
 			_, err := file.WriteString("test")
 			return err
 		}
-		_, _ = util.SafeFileOperation(filePath, flag, perm, operation)
+		_, _ = xfile.SafeFileOperation(filePath, flag, perm, operation)
 	})
 }
 
@@ -42,6 +44,6 @@ func FuzzSafeFileOperation(f *testing.F) {
 func FuzzEnsureDirExists(f *testing.F) {
 	f.Add("testdir")
 	f.Fuzz(func(t *testing.T, dirPath string) {
-		_ = util.EnsureDirExists(dirPath)
+		_ = xfile.EnsureDirExists(dirPath)
 	})
 }

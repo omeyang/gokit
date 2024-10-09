@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/omeyang/gokit/util/xfile"
+
 	"github.com/omeyang/gokit/util"
 )
 
@@ -87,7 +89,7 @@ func TestSafeFileOperation(t *testing.T) {
 		return err
 	}
 
-	file, err := util.SafeFileOperation(filePath, flag, perm, operation)
+	file, err := xfile.SafeFileOperation(filePath, flag, perm, operation)
 	if err != nil {
 		t.Fatalf("Failed to perform file operation: %v", err)
 	}
@@ -110,7 +112,7 @@ func TestSafeFileOperation(t *testing.T) {
 
 	// 测试 os.OpenFile 返回错误的情况
 	invalidFilePath := string([]byte{0})
-	_, err = util.SafeFileOperation(invalidFilePath, flag, perm, operation)
+	_, err = xfile.SafeFileOperation(invalidFilePath, flag, perm, operation)
 	if err == nil {
 		t.Fatalf("Expected error for invalid file path, got nil")
 	}
@@ -119,7 +121,7 @@ func TestSafeFileOperation(t *testing.T) {
 	errorOperation := func(file *os.File) error {
 		return os.ErrInvalid
 	}
-	_, err = util.SafeFileOperation(filePath, flag, perm, errorOperation)
+	_, err = xfile.SafeFileOperation(filePath, flag, perm, errorOperation)
 	if err == nil {
 		t.Fatalf("Expected error from operation, got nil")
 	}
@@ -129,7 +131,7 @@ func TestSafeFileOperation(t *testing.T) {
 func TestEnsureDirExists(t *testing.T) {
 	dirPath := "testdir"
 
-	err := util.EnsureDirExists(dirPath)
+	err := xfile.EnsureDirExists(dirPath)
 	if err != nil {
 		t.Fatalf("Failed to ensure directory exists: %v", err)
 	}
@@ -146,7 +148,7 @@ func TestEnsureDirExists(t *testing.T) {
 
 	// 测试无效路径
 	invalidDirPath := string([]byte{0})
-	err = util.EnsureDirExists(invalidDirPath)
+	err = xfile.EnsureDirExists(invalidDirPath)
 	if err == nil {
 		t.Fatalf("Expected error for invalid directory path, got nil")
 	}

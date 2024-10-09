@@ -1,4 +1,4 @@
-package util
+package xfile
 
 import (
 	"archive/tar"
@@ -40,7 +40,7 @@ type CompressParam struct {
 	RenameFunc  func(string, string) string // 重命名函数 防止已经有了同名的目标文件
 	Format      CompressType                // 指定压缩格式，例如 ".zip", ".tar.gz", ".gz"
 	BufferSize  int                         // 缓冲区大小，以字节为单位
-	PoolSize    int                         //临时对象池大小
+	PoolSize    int                         // 临时对象池大小
 }
 
 // DecompressParam 解压缩参数
@@ -48,7 +48,7 @@ type DecompressParam struct {
 	Source      string
 	Destination string
 	BufferSize  int // 缓冲区大小，以字节为单位
-	PoolSize    int //临时对象池大小
+	PoolSize    int // 临时对象池大小
 }
 
 // FileCompressor 文件压缩实例
@@ -69,7 +69,7 @@ func (fc *FileCompressor) Compress(param *CompressParam) error {
 	}
 	baseTargetName := filepath.Join(param.Destination, baseName)
 	compressedFilename := param.RenameFunc(baseTargetName, string(ext))
-	compressedFile, err := os.OpenFile(compressedFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	compressedFile, err := os.OpenFile(compressedFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,6 @@ func compressTarGz(compressedFile *os.File, source string, bufPool *pool.BatchPo
 		}
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -285,12 +284,12 @@ func decompressTarGz(source, destination string, bufPool *pool.BatchPool[[]byte]
 		// 修正路径分隔符问题
 		target = filepath.Clean(target)
 		if header.Typeflag == tar.TypeDir {
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := os.MkdirAll(target, 0o755); err != nil {
 				return err
 			}
 		} else {
 			dir := filepath.Dir(target)
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
 				return err
 			}
 			outFile, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, header.FileInfo().Mode())
@@ -330,7 +329,7 @@ func decompressZip(source, destination string, bufPool *pool.BatchPool[[]byte]) 
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(fpath), 0o755); err != nil {
 			return err
 		}
 

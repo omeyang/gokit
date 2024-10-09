@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/util/retry"
 )
 
 // BenchmarkNoRetryPolicy 基准测试 NoRetryPolicy
 func BenchmarkNoRetryPolicy(b *testing.B) {
-	policy := &util.NoRetryPolicy{}
+	policy := &retry.NoRetryPolicy{}
 	err := errors.New("test error")
 
 	b.ResetTimer()
@@ -23,7 +23,7 @@ func BenchmarkNoRetryPolicy(b *testing.B) {
 // BenchmarkSimpleRetryPolicy 基准测试 SimpleRetryPolicy
 func BenchmarkSimpleRetryPolicy(b *testing.B) {
 	waitTime := 2 * time.Second
-	policy := &util.SimpleRetryPolicy{MaxAttempts: 3, WaitTime: waitTime}
+	policy := &retry.SimpleRetryPolicy{MaxAttempts: 3, WaitTime: waitTime}
 	err := errors.New("test error")
 
 	b.ResetTimer()

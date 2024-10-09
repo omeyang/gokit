@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omeyang/gokit/middleware/storage"
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/storage"
+
+	"github.com/omeyang/gokit/util/retry"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -65,7 +66,7 @@ func TestGetMongoDBInstance(t *testing.T) {
 
 	mt.Run("GetMongoDBInstance", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -88,7 +89,7 @@ func TestNewMongoDBImpl(t *testing.T) {
 
 	mt.Run("NewMongoDBImpl", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -170,7 +171,7 @@ func TestMongoDBImpl_GetClient(t *testing.T) {
 
 	mt.Run("GetClient", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -323,7 +324,7 @@ func TestMongoDBImpl_ReadByPage(t *testing.T) {
 	for _, tc := range testCases {
 		mt.Run(tc.name, func(mt *mtest.T) {
 			ctx := context.Background()
-			retryPolicy := &util.NoRetryPolicy{}
+			retryPolicy := &retry.NoRetryPolicy{}
 			basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 			instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -356,7 +357,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 
 	mt.Run("BulkWriteWithRetry", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.SimpleRetryPolicy{
+		retryPolicy := &retry.SimpleRetryPolicy{
 			MaxAttempts: 3,
 			WaitTime:    time.Second,
 		}
@@ -395,7 +396,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 
 	mt.Run("BulkWriteWithRetry_NilOptions", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -411,7 +412,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 
 	mt.Run("BulkWriteWithRetry_NoRetry", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -451,7 +452,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 
 	mt.Run("BulkWriteWithRetry_RetrySuccess", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.ExponentialBackoffRetryPolicy{
+		retryPolicy := &retry.ExponentialBackoffRetryPolicy{
 			MaxAttempts:  3,
 			BaseWaitTime: time.Millisecond,
 		}
@@ -497,7 +498,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 
 	mt.Run("BulkWriteWithRetry_RetryFailure", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.ExponentialBackoffRetryPolicy{
+		retryPolicy := &retry.ExponentialBackoffRetryPolicy{
 			MaxAttempts:  2,
 			BaseWaitTime: time.Millisecond,
 		}
@@ -546,7 +547,7 @@ func TestMongoDBImpl_BulkWriteWithRetry(t *testing.T) {
 	})
 	mt.Run("BulkWriteWithRetry_ConvertToWriteModels", func(mt *mtest.T) {
 		ctx := context.Background()
-		retryPolicy := &util.NoRetryPolicy{}
+		retryPolicy := &retry.NoRetryPolicy{}
 		basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 		instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)

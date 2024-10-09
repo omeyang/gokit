@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/omeyang/gokit/middleware/pool"
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/util/retry"
 
+	"github.com/omeyang/gokit/middleware/pool"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -25,10 +25,19 @@ type PaginatedQueryParams struct {
 
 // BulkWriteOptions 封装了BulkWriteWithRetry函数所需的参数
 type BulkWriteOptions struct {
-	DbName      string           // 数据库名称
-	CollName    string           // 集合名称
-	Documents   []*bson.M        // 要写入的文档指针数组
-	RetryPolicy util.RetryPolicy // 重试策略接口
+	DbName      string            // 数据库名称
+	CollName    string            // 集合名称
+	Documents   []*bson.M         // 要写入的文档指针数组
+	RetryPolicy retry.RetryPolicy // 重试策略接口
+}
+
+// FieldMapping 定义字段映射
+type FieldMapping map[string]string
+
+// RenameOption 定义重命名选项
+type RenameOption struct {
+	Mapping      FieldMapping
+	KeepOriginal bool // 是否保留原始字段
 }
 
 // MongoDB mongo接口定义
@@ -54,8 +63,9 @@ type MongoDBImpl struct {
 }
 
 // GetMongoDBInstance 单例方式初始化 MongoDB 实例
-func GetMongoDBInstance(ctx context.Context, retryPolicy util.RetryPolicy, basic *options.ClientOptions,
-	opts ...func(*options.ClientOptions)) (*MongoDBImpl, error) {
+func GetMongoDBInstance(ctx context.Context, retryPolicy retry.RetryPolicy, basic *options.ClientOptions,
+	opts ...func(*options.ClientOptions),
+) (*MongoDBImpl, error) {
 	var err error
 	mongoDBOnce.Do(func() {
 		mongoDBInstance, err = newMongoDBImpl(ctx, retryPolicy, basic, opts...)
@@ -67,8 +77,9 @@ func GetMongoDBInstance(ctx context.Context, retryPolicy util.RetryPolicy, basic
 }
 
 // newMongoDBImpl 使用基本配置和可选的配置函数来创建一个新的 MongoDB 客户端实例
-func newMongoDBImpl(ctx context.Context, retryPolicy util.RetryPolicy, basic *options.ClientOptions,
-	opts ...func(*options.ClientOptions)) (*MongoDBImpl, error) {
+func newMongoDBImpl(ctx context.Context, retryPolicy retry.RetryPolicy, basic *options.ClientOptions,
+	opts ...func(*options.ClientOptions),
+) (*MongoDBImpl, error) {
 	for _, opt := range opts {
 		opt(basic)
 	}
@@ -188,4 +199,24 @@ func convertToWriteModels(docs []*bson.M) []mongo.WriteModel {
 		models[i] = mongo.NewInsertOneModel().SetDocument(*docPtr) // 解引用
 	}
 	return models
+}
+
+// renameFields 重命名文档中的字段
+func (m *MongoDBImpl) renameFields(doc bson.M, opt *RenameOption) bson.M {
+	if opt == nil || len(opt.Mapping) == 0 {
+		return doc
+	}
+
+	result := make(bson.M, len(doc))
+	for k, v := range doc {
+		if newKey, exists := opt.Mapping[k]; exists {
+			result[newKey] = v
+			if opt.KeepOriginal {
+				result[k] = v // 保留原始字段
+			}
+		} else {
+			result[k] = v
+		}
+	}
+	return result
 }

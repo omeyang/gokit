@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/omeyang/gokit/util/xfile"
+
 	"github.com/omeyang/gokit/util"
 )
 
@@ -54,7 +56,7 @@ func BenchmarkSafeFileOperation(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		file, err := util.SafeFileOperation(filePath, flag, perm, operation)
+		file, err := xfile.SafeFileOperation(filePath, flag, perm, operation)
 		if err != nil {
 			b.Fatalf("Failed to perform file operation: %v", err)
 		}
@@ -75,7 +77,7 @@ func BenchmarkSafeFileOperationWithError(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		_, err := util.SafeFileOperation(filePath, flag, perm, operation)
+		_, err := xfile.SafeFileOperation(filePath, flag, perm, operation)
 		if err == nil {
 			b.Fatalf("Expected error for invalid file path, got nil")
 		}
@@ -86,7 +88,7 @@ func BenchmarkSafeFileOperationWithError(b *testing.B) {
 func BenchmarkEnsureDirExists(b *testing.B) {
 	dirPath := "testdir"
 	for i := 0; i < b.N; i++ {
-		err := util.EnsureDirExists(dirPath)
+		err := xfile.EnsureDirExists(dirPath)
 		if err != nil {
 			b.Fatalf("Failed to ensure directory exists: %v", err)
 		}
@@ -98,7 +100,7 @@ func BenchmarkEnsureDirExists(b *testing.B) {
 func BenchmarkEnsureDirExistsWithError(b *testing.B) {
 	invalidDirPath := string([]byte{0}) // 无效目录路径
 	for i := 0; i < b.N; i++ {
-		err := util.EnsureDirExists(invalidDirPath)
+		err := xfile.EnsureDirExists(invalidDirPath)
 		if err == nil {
 			b.Fatalf("Expected error for invalid directory path, got nil")
 		}

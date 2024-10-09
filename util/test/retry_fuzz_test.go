@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/util/retry"
 )
 
 // FuzzNoRetryPolicy fuzzing测试 NoRetryPolicy
 func FuzzNoRetryPolicy(f *testing.F) {
 	f.Add(0)
 	f.Fuzz(func(t *testing.T, attempt int) {
-		policy := &util.NoRetryPolicy{}
+		policy := &retry.NoRetryPolicy{}
 		_ = policy.ShouldRetry(attempt, nil)
 		_ = policy.WaitDuration(attempt)
 	})
@@ -22,7 +22,7 @@ func FuzzSimpleRetryPolicy(f *testing.F) {
 	f.Add(0, 5, 1)
 	f.Fuzz(func(t *testing.T, attempt int, maxAttempts int, waitTimeSeconds int) {
 		waitTime := time.Duration(waitTimeSeconds) * time.Second
-		policy := &util.SimpleRetryPolicy{
+		policy := &retry.SimpleRetryPolicy{
 			MaxAttempts: maxAttempts,
 			WaitTime:    waitTime,
 		}
@@ -36,7 +36,7 @@ func FuzzExponentialBackoffRetryPolicy(f *testing.F) {
 	f.Add(0, 1, 5)
 	f.Fuzz(func(t *testing.T, attempt int, baseWaitTimeSeconds int, maxAttempts int) {
 		baseWaitTime := time.Duration(baseWaitTimeSeconds) * time.Second
-		policy := &util.ExponentialBackoffRetryPolicy{
+		policy := &retry.ExponentialBackoffRetryPolicy{
 			BaseWaitTime: baseWaitTime,
 			MaxAttempts:  maxAttempts,
 		}

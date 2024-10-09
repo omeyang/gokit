@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/omeyang/gokit/middleware/storage"
-	"github.com/omeyang/gokit/util"
+	"github.com/omeyang/gokit/storage"
+
+	"github.com/omeyang/gokit/util/retry"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -13,7 +14,7 @@ import (
 
 func FuzzMongoDBImpl_ReadByPage(f *testing.F) {
 	ctx := context.Background()
-	retryPolicy := &util.NoRetryPolicy{}
+	retryPolicy := &retry.NoRetryPolicy{}
 	basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 	instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)
@@ -39,7 +40,7 @@ func FuzzMongoDBImpl_ReadByPage(f *testing.F) {
 
 func FuzzMongoDBImpl_BulkWriteWithRetry(f *testing.F) {
 	ctx := context.Background()
-	retryPolicy := &util.NoRetryPolicy{}
+	retryPolicy := &retry.NoRetryPolicy{}
 	basic := options.Client().ApplyURI("mongodb://localhost:27017")
 
 	instance, err := storage.GetMongoDBInstance(ctx, retryPolicy, basic)

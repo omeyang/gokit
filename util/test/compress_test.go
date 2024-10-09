@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/omeyang/gokit/util"
+	omeyang "github.com/omeyang/gokit/util/xfile"
 )
 
 func TestFileCompressor_Compress_Decompress(t *testing.T) {
@@ -27,12 +27,12 @@ func TestFileCompressor_Compress_Decompress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	compressor := &util.FileCompressor{}
+	compressor := &omeyang.FileCompressor{}
 
 	// 测试压缩
-	compressFormats := []util.CompressType{util.GzCompressType, util.TarGzCompressType, util.ZipCompressType}
+	compressFormats := []omeyang.CompressType{omeyang.GzCompressType, omeyang.TarGzCompressType, omeyang.ZipCompressType}
 	for _, format := range compressFormats {
-		compressParam := &util.CompressParam{
+		compressParam := &omeyang.CompressParam{
 			Source:      testFile,
 			Destination: testDir,
 			Format:      format,
@@ -53,7 +53,7 @@ func TestFileCompressor_Compress_Decompress(t *testing.T) {
 
 		// 测试解压缩
 		var decompressedPath string
-		if format == util.GzCompressType {
+		if format == omeyang.GzCompressType {
 			// 对于 .gz 格式，解压缩路径应为文件路径
 			decompressedPath = filepath.Join(testDir, "decompressed_test.txt")
 		} else {
@@ -65,7 +65,7 @@ func TestFileCompressor_Compress_Decompress(t *testing.T) {
 			}
 		}
 
-		decompressParam := &util.DecompressParam{
+		decompressParam := &omeyang.DecompressParam{
 			Source:      compressedFile,
 			Destination: decompressedPath,
 			BufferSize:  1024,
@@ -79,7 +79,7 @@ func TestFileCompressor_Compress_Decompress(t *testing.T) {
 
 		// 检查解压缩文件是否存在
 		var decompressedFile string
-		if format == util.GzCompressType {
+		if format == omeyang.GzCompressType {
 			decompressedFile = decompressedPath
 		} else {
 			decompressedFile = filepath.Join(decompressedPath, "test.txt")
@@ -114,12 +114,12 @@ func TestFileCompressor_Compress_NonExistentSource(t *testing.T) {
 	// 清理测试目录中的相关文件
 	cleanupTestCompressFiles(testDir)
 
-	compressor := &util.FileCompressor{}
+	compressor := &omeyang.FileCompressor{}
 
-	compressParam := &util.CompressParam{
+	compressParam := &omeyang.CompressParam{
 		Source:      "nonexistent.txt",
 		Destination: testDir,
-		Format:      util.GzCompressType,
+		Format:      omeyang.GzCompressType,
 	}
 
 	err = compressor.Compress(compressParam)
@@ -143,9 +143,9 @@ func TestFileCompressor_Decompress_NonExistentSource(t *testing.T) {
 	// 清理测试目录中的相关文件
 	cleanupTestCompressFiles(testDir)
 
-	compressor := &util.FileCompressor{}
+	compressor := &omeyang.FileCompressor{}
 
-	decompressParam := &util.DecompressParam{
+	decompressParam := &omeyang.DecompressParam{
 		Source:      "nonexistent.gz",
 		Destination: testDir,
 	}
@@ -171,12 +171,12 @@ func TestFileCompressor_Compress_UnsupportedFormat(t *testing.T) {
 	// 清理测试目录中的相关文件
 	cleanupTestCompressFiles(testDir)
 
-	compressor := &util.FileCompressor{}
+	compressor := &omeyang.FileCompressor{}
 
-	compressParam := &util.CompressParam{
+	compressParam := &omeyang.CompressParam{
 		Source:      filepath.Join(testDir, "test.txt"),
 		Destination: testDir,
-		Format:      util.CompressType("unsupported"),
+		Format:      omeyang.CompressType("unsupported"),
 	}
 
 	err = compressor.Compress(compressParam)
@@ -200,9 +200,9 @@ func TestFileCompressor_Decompress_UnsupportedFormat(t *testing.T) {
 	// 清理测试目录中的相关文件
 	cleanupTestCompressFiles(testDir)
 
-	compressor := &util.FileCompressor{}
+	compressor := &omeyang.FileCompressor{}
 
-	decompressParam := &util.DecompressParam{
+	decompressParam := &omeyang.DecompressParam{
 		Source:      filepath.Join(testDir, "test.unsupported"),
 		Destination: testDir,
 	}
